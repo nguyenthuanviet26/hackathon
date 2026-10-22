@@ -27,7 +27,18 @@ fi
 _APP_NAME="${_PKG_NAME:-myapp}"
 
 # --- Configuration (override via environment) ---
+# In GitHub Codespaces the browser reaches forwarded ports through
+# https://<codespace>-<port>.<domain>, never localhost, so default to those URLs there.
+# Ports 8080 and 3000 must be set to Public (Ports tab) for the Tide enclave to load.
+if [ -n "${CODESPACE_NAME:-}" ] && [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]; then
+  _CS="https://${CODESPACE_NAME}-%s.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+  TIDECLOAK_URL="${TIDECLOAK_URL:-$(printf "$_CS" 8080)}"
+  CLIENT_APP_URL="${CLIENT_APP_URL:-$(printf "$_CS" 3000)}"
+fi
 TIDECLOAK_URL="${TIDECLOAK_URL:-http://localhost:8080}"
+# Readiness is probed from inside the machine: a private Codespaces port answers 302, which
+# `curl -f` would mistake for "up".
+TIDECLOAK_LOCAL_URL="${TIDECLOAK_LOCAL_URL:-http://localhost:8080}"
 REALM_NAME="${REALM_NAME:-$_APP_NAME}"
 CLIENT_NAME="${CLIENT_NAME:-${_APP_NAME}-client}"
 CLIENT_APP_URL="${CLIENT_APP_URL:-http://localhost:3000}"
@@ -236,21 +247,31 @@ sudo docker run -d --name tidecloak \
   -p 8080:8080 \
   -e KC_BOOTSTRAP_ADMIN_USERNAME="$KC_BOOTSTRAP_ADMIN_USERNAME" \
   -e KC_BOOTSTRAP_ADMIN_PASSWORD="$KC_BOOTSTRAP_ADMIN_PASSWORD" \
+  -e KC_HOSTNAME="$TIDECLOAK_URL" \
+  -e KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true \
+  -e KC_PROXY_HEADERS=xforwarded \
   "$TIDECLOAK_IMAGE"
 
 # --- Step 3: Wait for readiness ---
 echo "==> Waiting for TideCloak to start..."
 for i in {1..24}; do
-  curl -sf "$TIDECLOAK_URL" > /dev/null 2>&1 && break
+  curl -sf "$TIDECLOAK_LOCAL_URL" > /dev/null 2>&1 && break
   echo "  Attempt $i/24..."
   sleep 5
 done
 
-if ! curl -sf "$TIDECLOAK_URL" > /dev/null 2>&1; then
+if ! curl -sf "$TIDECLOAK_LOCAL_URL" > /dev/null 2>&1; then
   echo "ERROR: TideCloak did not start within 120 seconds. Run: docker logs tidecloak"
   exit 1
 fi
 echo "  TideCloak is ready."
+
+if [ "$TIDECLOAK_URL" != "$TIDECLOAK_LOCAL_URL" ]; then
+  echo "==> Waiting for $TIDECLOAK_URL (set port 8080 to Public in the Ports tab)..."
+  until curl -s -o /dev/null -w '%{http_code}' "$TIDECLOAK_URL/realms/master" | grep -q '^200$'; do
+    sleep 5
+  done
+fi
 
 # --- Step 4: Create realm from template ---
 echo "==> Creating realm '$REALM_NAME' with E2EE roles..."
