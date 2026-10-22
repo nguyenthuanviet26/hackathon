@@ -153,16 +153,17 @@ export function SimProvider({ children }: { children: React.ReactNode }) {
 function SimBanner() {
   return (
     <div
+      role="note"
       style={{
-        maxWidth: 900,
-        margin: "0 auto 1.25rem",
-        background: "#2a1f06",
-        border: "1px solid #f59e0b55",
-        color: "#f59e0b",
-        borderRadius: 8,
+        maxWidth: 960,
+        margin: "0 auto 1rem",
+        background: "#FFF5E1",
+        borderLeft: "3px solid #9A5B00",
+        color: "#0E1B2E",
+        borderRadius: "0 8px 8px 0",
         padding: "0.55rem 0.9rem",
-        fontSize: "0.84rem",
-        lineHeight: 1.5,
+        fontSize: "0.82rem",
+        lineHeight: 1.55,
       }}
     >
       <strong>Chế độ mô phỏng TideCloak (Plan C).</strong> Mạng Tide đang quá tải nên realm chưa được
@@ -209,45 +210,66 @@ function LoginPicker({ onToken, onClose }: { onToken: (t: string) => void; onClo
 
   const button: React.CSSProperties = {
     display: "flex",
-    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "0.7rem",
     width: "100%",
-    padding: "0.7rem 0.9rem",
-    background: "#16161a",
-    border: "1px solid #2a2a30",
-    borderRadius: 7,
-    color: "#ededed",
+    padding: "0.65rem 0.8rem",
+    background: "#FFFFFF",
+    border: "1px solid #DCE3EC",
+    borderRadius: 8,
+    color: "#0E1B2E",
     fontSize: "0.95rem",
+    fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
+    textAlign: "left",
   };
 
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "#000a", display: "grid", placeItems: "center", padding: 16, zIndex: 50 }}
+      style={{ position: "fixed", inset: 0, background: "rgba(14,27,46,0.45)", display: "grid", placeItems: "center", padding: 16, zIndex: 50 }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sim-login-title"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 380, background: "#111113", border: "1px solid #2a2a30", borderRadius: 10, padding: "1.25rem" }}
+        style={{ width: "100%", maxWidth: 400, background: "#FFFFFF", borderRadius: 14, padding: "1.5rem", boxShadow: "0 24px 48px rgba(14,27,46,0.18)" }}
       >
-        <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Đăng nhập (mô phỏng Tide)</h2>
-        <p style={{ color: "#8b8b94", fontSize: "0.85rem", marginTop: 0 }}>
-          Mỗi tài khoản nên mở trong một browser profile riêng, như bản thật.
-          {threshold !== null && <> Ngưỡng quorum hiện tại: <strong>{threshold}</strong>.</>}
+        <h2 id="sim-login-title" style={{ margin: "0 0 0.35rem", fontSize: "1.15rem" }}>Chọn tài khoản</h2>
+        <p style={{ color: "#5B6B82", fontSize: "0.86rem", margin: "0 0 1.1rem", lineHeight: 1.55 }}>
+          Đăng nhập mô phỏng Tide. Mở mỗi tài khoản trong một trình duyệt riêng, như bản thật.
+          {threshold !== null && <> Cần <strong>{threshold}</strong> quản trị viên ký cho mỗi thay đổi.</>}
         </p>
-        {error && <p style={{ color: "#ef4444", fontSize: "0.85rem" }}>{error}</p>}
+        {error && <p style={{ color: "#B42318", fontSize: "0.85rem" }}>{error}</p>}
         <div style={{ display: "grid", gap: "0.5rem" }}>
-          {users === null && <span style={{ color: "#8b8b94" }}>Đang tải…</span>}
-          {users?.map((u) => (
-            <button key={u.username} onClick={() => pick(u.username)} style={button}>
-              <span>{u.username}</span>
-              <span style={{ color: "#8b8b94", fontSize: "0.82rem" }}>{u.admin ? "tide-realm-admin" : "nhân viên"}</span>
+          {users === null && <span style={{ color: "#5B6B82" }}>Đang tải…</span>}
+          {users?.map((u, i) => (
+            <button key={u.username} onClick={() => pick(u.username)} style={button} autoFocus={i === 0}>
+              <span
+                aria-hidden
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: "0.8rem",
+                  background: u.admin ? "#1E3A8A" : "#E8EEFC",
+                  color: u.admin ? "#fff" : "#1E3A8A",
+                }}
+              >
+                {u.username.slice(0, 1).toUpperCase()}
+              </span>
+              <span style={{ flex: 1 }}>{u.username}</span>
+              <span style={{ color: "#5B6B82", fontSize: "0.8rem", fontWeight: 400 }}>{u.admin ? "quản trị viên" : "nhân viên"}</span>
             </button>
           ))}
         </div>
         <button
           onClick={reset}
-          style={{ marginTop: "1rem", background: "none", border: "none", color: "#8b8b94", fontSize: "0.8rem", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+          style={{ marginTop: "1.1rem", background: "none", border: "none", color: "#5B6B82", fontSize: "0.8rem", cursor: "pointer", padding: 0, textDecoration: "underline", fontFamily: "inherit" }}
         >
           Đặt lại dữ liệu demo
         </button>

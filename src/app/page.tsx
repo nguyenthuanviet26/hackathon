@@ -13,7 +13,7 @@ import { useTideCloak } from "@/lib/tide";
 import { redact, ruleStateFor, type Finding } from "@/lib/redact";
 import { ROLE_EXPORT_CONTACT } from "@/lib/log/record";
 import { fetchSignedPolicy, encryptTranscript, explainCryptoError, type PolicyState } from "@/lib/policy/aiLog";
-import { Gate, Notice, Pill, Shell, btn, c, card, input, mono, useWhoAmI } from "./ui";
+import { Gate, Notice, Pill, RedactedText, Shell, btn, btnGhost, c, card, codeBox, input, mono, useWhoAmI } from "./ui";
 
 interface AskResult {
   sentToModel: string;
@@ -177,7 +177,7 @@ function Console() {
           <button onClick={send} disabled={busy || !prompt.trim()} style={{ ...btn, opacity: busy || !prompt.trim() ? 0.5 : 1 }}>
             {busy ? "Đang gửi…" : "Gửi cho AI"}
           </button>
-          <button onClick={() => setPrompt(EXAMPLE)} style={{ ...btn, background: "transparent", border: `1px solid ${c.line}`, color: c.dim }}>
+          <button onClick={() => setPrompt(EXAMPLE)} style={btnGhost}>
             Dùng ví dụ mẫu
           </button>
         </div>
@@ -193,8 +193,8 @@ function Console() {
               {preview.findings.length} giá trị được tìm thấy
             </Pill>
           </h2>
-          <div style={{ ...mono, background: "#1a1a1d", border: `1px solid ${c.line}`, borderRadius: 7, padding: "0.9rem" }}>
-            {preview.redacted || <span style={{ color: c.dim }}>(trống)</span>}
+          <div style={codeBox}>
+            {preview.redacted ? <RedactedText text={preview.redacted} /> : <span style={{ color: c.dim }}>(trống)</span>}
           </div>
           {preview.findings.length > 0 && <FindingList findings={preview.findings} />}
         </div>
@@ -218,8 +218,8 @@ function Console() {
 
           <div style={card}>
             <h2 style={{ marginTop: 0, fontSize: "1rem" }}>Nội dung máy chủ đã gửi đi</h2>
-            <div style={{ ...mono, background: "#1a1a1d", border: `1px solid ${c.line}`, borderRadius: 7, padding: "0.9rem" }}>
-              {result.sentToModel}
+            <div style={codeBox}>
+              <RedactedText text={result.sentToModel} />
             </div>
           </div>
 
@@ -234,7 +234,7 @@ function Console() {
             <p style={{ color: c.dim, fontSize: "0.88rem" }}>
               {logState}{" "}
               {logState.startsWith("Đã mã hóa") && (
-                <a href="/history" style={{ color: "#93c5fd" }}>
+                <a href="/history" style={{ color: c.blue }}>
                   Xem lịch sử
                 </a>
               )}

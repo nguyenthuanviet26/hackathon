@@ -22,7 +22,7 @@ import {
   type ChangeRequest,
 } from "@/lib/iga/client";
 import { ROLE_EXPORT_CONTACT, ROLE_LOG_READER, ROLE_DECRYPTOR } from "@/lib/log/record";
-import { Gate, Notice, Pill, Shell, btn, btnSmall, c, card, input, useWhoAmI } from "../ui";
+import { Gate, Notice, Pill, QuorumSeals, Shell, btn, btnSmall, c, card, input, useWhoAmI } from "../ui";
 
 /** The roles this panel can propose. Each one is a loosening that needs a quorum. */
 const GRANTABLE = [
@@ -47,6 +47,14 @@ interface UserRow {
   id: string;
   username: string;
   roles: string[];
+}
+
+/** "Cấp ai_export_contact cho nhanvien", when the request says which user and role it touches. */
+function describe(cr: ChangeRequest, users: UserRow[] | null): string | null {
+  const rows = cr.rows as { userId?: string; role?: string } | undefined;
+  if (!rows?.role) return null;
+  const who = users?.find((u) => u.id === rows.userId)?.username ?? "người dùng";
+  return `${cr.actionType === "REVOKE_ROLE" ? "Thu hồi" : "Cấp"} ${rows.role} cho ${who}`;
 }
 
 export default function GovernancePage() {
@@ -280,22 +288,28 @@ function Governance() {
               <strong style={{ fontSize: "0.95rem" }}>{cr.actionType}</strong>
               <Pill>{cr.entityType}</Pill>
               {destructive && <Pill tone="red">phá huỷ realm — đọc kỹ</Pill>}
-              {t.ready ? (
-                <Pill tone="green">đủ quorum, sẵn sàng áp dụng</Pill>
-              ) : (
-                <Pill tone="amber">
-                  {t.count === null ? "chưa rõ số chữ ký" : `${t.count}${t.threshold ? `/${t.threshold}` : ""} đã ký`}
-                </Pill>
-              )}
               {cr.blocked && <Pill tone="red">bị chặn: {cr.blockedReason ?? "phụ thuộc yêu cầu khác"}</Pill>}
             </div>
 
-            <div style={{ color: c.dim, fontSize: "0.84rem", marginBottom: "0.7rem" }}>
-              <div>id: <code>{cr.id}</code></div>
-              {cr.requestedBy && <div>đề xuất bởi: {cr.requestedBy}</div>}
+            {describe(cr, users) && (
+              <p style={{ margin: "0 0 0.9rem", fontSize: "0.95rem" }}>{describe(cr, users)}</p>
+            )}
+
+            <div style={{ margin: "0 0 0.9rem" }}>
+              <QuorumSeals
+                count={t.count}
+                threshold={t.threshold}
+                ready={t.ready}
+                names={(cr.authorizers ?? []).map((a) => a.username ?? "")}
+              />
+            </div>
+
+            <div style={{ color: c.dim, fontSize: "0.82rem", marginBottom: "0.9rem", lineHeight: 1.6 }}>
+              {cr.requestedBy && <div>Đề xuất bởi {cr.requestedBy}</div>}
               {(cr.authorizers?.length ?? 0) > 0 && (
-                <div>đã ký: {cr.authorizers!.map((a) => a.username ?? "?").join(", ")}</div>
+                <div>Đã ký: {cr.authorizers!.map((a) => a.username ?? "?").join(", ")}</div>
               )}
+              <div>Mã yêu cầu <code>{cr.id}</code></div>
             </div>
 
             {destructive ? (

@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTideCloak } from "@/lib/tide";
 import { decryptTranscript, explainCryptoError, fetchSignedPolicy, type PolicyState } from "@/lib/policy/aiLog";
 import { ROLE_DECRYPTOR, ROLE_LOG_READER } from "@/lib/log/record";
-import { Gate, Notice, Pill, Shell, btnSmall, c, card, mono, useWhoAmI } from "../ui";
+import { Gate, Notice, Pill, Shell, btnGhost, btnSmall, c, card, codeBox, mono, useWhoAmI } from "../ui";
 
 interface LogEntry {
   id: string;
@@ -173,16 +173,7 @@ function History() {
               {opened[entry.id]}
             </div>
           ) : (
-            <div
-              style={{
-                ...mono,
-                background: "#1a1a1d",
-                border: `1px solid ${c.line}`,
-                borderRadius: 7,
-                padding: "0.9rem",
-                color: c.dim,
-              }}
-            >
+            <div style={{ ...codeBox, color: c.dim }}>
               {entry.ciphertext.slice(0, 120)}
               {entry.ciphertext.length > 120 ? "…" : ""}
             </div>
@@ -204,7 +195,7 @@ function History() {
                     return next;
                   })
                 }
-                style={{ ...btnSmall, background: "transparent", border: `1px solid ${c.line}`, color: c.dim }}
+                style={{ ...btnSmall, ...btnGhost, padding: "0.4rem 0.8rem", fontSize: "0.86rem" }}
               >
                 Ẩn
               </button>
