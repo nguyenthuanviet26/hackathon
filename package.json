@@ -1,0 +1,28 @@
+{
+  "name": "worksafe-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "init": "bash scripts/init-tidecloak.sh",
+    "test": "node --test src/lib/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tidecloak/nextjs": "0.14.17",
+    "jose": "^6.0.0",
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@tideorg/js": "0.14.29",
+    "heimdall-tide": "0.14.41",
+    "@tidecloak/js": "0.14.17"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.0.0"
+  }
+}
