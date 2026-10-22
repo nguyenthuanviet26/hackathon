@@ -1,14 +1,51 @@
 # WorkSafe AI
 
-Many companies ban AI because they cannot guarantee customer data stays safe. Existing tools can
-redact data before it reaches the AI, but one administrator still holds every key: one person, or
-one hijacked admin account, can quietly loosen the redaction rules or read everything employees
-have sent to the AI. So companies ban AI outright, and staff use personal ChatGPT instead.
+[![Built with TideCloak](https://tide.org/badges/built-with-tidecloak.svg)](https://tide.org/tidecloak?utm_source=github&utm_medium=readme&utm_campaign=unlocked)
 
-WorkSafe AI lets companies open AI to employees with confidence. Customer details are redacted
-before sending; loosening the rules requires multiple administrators to approve through TideCloak;
-and the stored AI history is encrypted, readable only after the same quorum approval. No single
-admin can loosen the rules or quietly read the data.
+## Project overview
+
+_WorkSafe AI is an internal AI gateway that redacts customer data before it reaches the model, and makes loosening those rules, or reading the AI history, need a quorum of administrators instead of one._
+
+Built with [TideCloak](https://tide.org/tidecloak?utm_source=github&utm_medium=readme&utm_campaign=unlocked).
+
+**Demo video:** _(link here)_
+
+### 1. Vision & originality
+
+Companies either ban AI or trust one administrator with everything. WorkSafe AI treats each privacy rule as something no single person can switch off. Relaxing a redaction rule, or opening the stored AI history, is a governed change that several admins must sign. Some data, like national ID and card numbers, cannot be unredacted by anyone.
+
+### 2. Trust constraint insight
+
+Redaction tools exist, but one admin, or one hijacked admin account, can quietly loosen the rules or read everything employees asked the AI. So security teams ban AI, and staff paste customer data into personal chatbots instead. Remove the single trusted admin and the company can approve AI, because nobody can abuse it alone.
+
+### 3. Value & impact
+
+A customer-service agent drafts an apology to a customer, pasting their phone, email, ID and card number. The model only ever sees `[SĐT_1]`, `[EMAIL_1]`, `[CCCD_1]`, `[THE_CARD_1]`. Compliance gets an encrypted record that no admin can open alone. Employees get approved AI instead of shadow AI.
+
+### 4. Why TideCloak matters
+
+Every rule change is a TideCloak IGA change request, with the threshold `max(1, floor(0.7 × admins))`. Each admin signs in their own Tide enclave, straight from their browser with their own DPoP-bound token, so votes cannot be pooled. The history is encrypted in the employee's browser under `RelationshipAttestation:1` policies whose subject is a role. The ORK network decrypts only for credentials holding `ai_log_reader` and `_tide_decryptor`. Our app holds no key to misuse.
+
+### 5. Prototype & storytelling
+
+Tide licensing failed during the event (`FinalizeWallet` 500), so the demo runs Plan C: TideCloak simulated with the same rules and API. The live integration is in the repo and switches on once a realm is licensed. Watch for: admin proposes sending phone numbers raw and signs (1/2 seals). Signing again is refused. A second admin signs and the change applies. The employee's phone and email now pass, but ID and card stay masked.
+
+## Setup
+
+Needs Node 20+. No Docker is needed for the simulated mode used in the demo.
+
+```bash
+npm install
+npm run dev          # http://localhost:3000, runs the TideCloak simulation (Plan C)
+```
+
+Sign in as `admin`, open **Thiết lập** and sign both policies. Then open `nhanvien`, `admin` and `admin2` in three separate browsers and follow [docs/DEMO.md](docs/DEMO.md).
+
+Live TideCloak (needs Docker, `curl`, `jq`): `cp .env.example .env`, fill it in, then `npm run init`. Once the realm is licensed, `data/tidecloak.json` gains a `jwk` and the app switches to the real TideCloak with no code change.
+
+---
+
+_Tài liệu kỹ thuật chi tiết bên dưới viết bằng tiếng Việt._
 
 ---
 
