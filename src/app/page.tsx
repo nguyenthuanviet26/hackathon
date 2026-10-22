@@ -9,7 +9,7 @@
 // server's version as the truth.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTideCloak } from "@tidecloak/nextjs";
+import { useTideCloak } from "@/lib/tide";
 import { redact, ruleStateFor, type Finding } from "@/lib/redact";
 import { ROLE_EXPORT_CONTACT } from "@/lib/log/record";
 import { fetchSignedPolicy, encryptTranscript, explainCryptoError, type PolicyState } from "@/lib/policy/aiLog";

@@ -16,7 +16,7 @@
 // quorum. Signing the policy once is what makes the quorum the only remaining lever.
 
 import { useCallback, useEffect, useState } from "react";
-import { useTideCloak } from "@tidecloak/nextjs";
+import { useTideCloak } from "@/lib/tide";
 import { fetchSignedPolicy, signAndStoreLogPolicy, type PolicyState } from "@/lib/policy/aiLog";
 import {
   AI_LOG_RECORD_ID,

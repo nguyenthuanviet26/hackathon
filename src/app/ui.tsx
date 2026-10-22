@@ -3,7 +3,7 @@
 // Shared chrome and styles. One file so the four pages look like one app and nothing is restyled
 // by hand per page.
 
-import { useTideCloak } from "@tidecloak/nextjs";
+import { useTideCloak } from "@/lib/tide";
 import { ADMIN_ROLE, ADMIN_ROLE_CLIENT, ROLE_LOG_READER, ROLE_EXPORT_CONTACT } from "@/lib/log/record";
 
 export const c = {

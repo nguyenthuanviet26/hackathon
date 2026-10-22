@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { verifyTideJWT, hasRole, extractToken } from "./tideJWT";
 import { verifyDpop } from "./verifyDpop";
+import { SIMULATED } from "@/lib/tide/mode";
+import { verifySimToken } from "@/lib/sim/server";
 import type { JWTPayload } from "jose";
 
 type AuthHandler = (req: NextRequest, jwt: JWTPayload) => Promise<Response>;
@@ -9,6 +11,9 @@ export function withAuth(handler: AuthHandler) {
   return async (req: NextRequest) => {
     try {
       const token = extractToken(req.headers.get("authorization"));
+      // Plan C: with no licensed realm, tokens come from the simulated TideCloak (src/lib/sim).
+      // They carry the same claims, so every handler and role check below is unchanged.
+      if (SIMULATED) return handler(req, await verifySimToken(token));
       const jwt = await verifyTideJWT(token);
       // The signature alone is not enough. This realm issues sender-constrained tokens (cnf.jkt),
       // and without checking the DPoP proof a stolen token replays as a plain `Bearer` and passes

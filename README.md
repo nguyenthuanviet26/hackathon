@@ -96,6 +96,33 @@ bash .tide-pack/templates/shared/tide-doctor.sh --url http://localhost:3000
 
 ---
 
+## Chế độ mô phỏng TideCloak (Plan C)
+
+Mạng Tide đang quá tải nên bước license realm có thể lỗi (`FinalizeWallet … 500`). Ban tổ chức cho
+phép mô phỏng, và chấm bản mô phỏng ngang bản chạy thật. App **tự vào chế độ mô phỏng** khi
+`data/tidecloak.json` không có `jwk` (tức là chưa có realm được license). Không cần Docker:
+
+```bash
+npm install
+npm run dev        # tự tạo adapter giữ chỗ nếu chưa có → chế độ mô phỏng
+```
+
+Mỗi trang hiện banner vàng báo đang mô phỏng. Đăng nhập là chọn một trong 4 tài khoản `admin`,
+`admin2`, `admin3`, `nhanvien`. Kịch bản demo giữ nguyên.
+
+| Phần | Bản thật | Bản mô phỏng (`src/lib/sim/`) |
+|---|---|---|
+| Đăng nhập, role trong token | TideCloak | JWT do server app ký. Role mới chỉ có sau khi đăng nhập lại, giống bản thật |
+| Cấp role = change request | IGA của TideCloak | Cùng API (`/admin/realms/…/iga/…`), cùng mã `202`/`409`/`412` |
+| Quorum | `max(1, floor(0.7 × admin))`, mỗi admin một phiếu | Cùng công thức. Phiếu gắn với token của người ký, không dùng lại được dưới tên người khác |
+| Ký trong enclave | Popup Tide | Hộp xác nhận ghi rõ ai đang ký |
+| Mã hóa theo policy | Mạng ORK, contract `RelationshipAttestation:1` | ORK mô phỏng kiểm cùng điều kiện (tag, role chủ thể, `_tide_decryptor`), báo lỗi cùng câu chữ |
+| **Giữ khóa** | **Chia cho nhiều node ORK, không máy nào giải mã một mình** | **Một file `data/sim/ork.key` trên server.** Đây là điểm duy nhất bản mô phỏng yếu hơn bản thật |
+
+Các route `/api/sim/*` trả `404` khi realm thật đã được license, nên bản chạy thật không có cửa
+"đăng nhập thành bất kỳ ai". Khi `npm run init` chạy được, nó ghi đè `data/tidecloak.json`, app tự
+chuyển sang TideCloak thật mà không phải sửa code.
+
 ## Kịch bản demo
 
 Xem [docs/DEMO.md](docs/DEMO.md) — hai cảnh, theo đúng thứ tự ưu tiên, kèm những gì cần kiểm chứng
@@ -108,7 +135,8 @@ trước khi nói thành câu khẳng định.
 | Redaction engine | **Đã test** — 11/11 unit test, gồm cả ca role nới và ca không ai nới được |
 | App build + typecheck | **Đã chạy** — `next build` sạch, `tsc --noEmit` sạch |
 | Cấu hình Tide (DPoP, rewrite, CSP, verify server-side) | **tide-doctor PASS** |
-| Realm, login, quorum, mã hóa | **CHƯA chạy** — cần Docker để `npm run init`; hai FAIL còn lại của tide-doctor (`jwk`, `vendorId`) là vì chưa có realm |
+| Realm, login, quorum, mã hóa (bản thật) | **CHƯA chạy được.** `npm run init` dừng ở bước license: mạng Tide trả `FinalizeWallet 500` |
+| Login, quorum, mã hóa (bản mô phỏng) | **Đã chạy end-to-end qua API**, 25/25 bước theo kịch bản demo, gồm cả các ca bị từ chối (ký lại 409, dùng lại phiếu của admin khác, sửa policy, sai tag, thiếu role) |
 | `RelationshipAttestation:1` trên mạng ORK | **Giả định** — contract có trên ORK `main` từ 2026-10-16. Mạng cũ hơn thì ký policy sẽ lỗi; khi đó hỏi Tide team, **không** tự viết contract thay thế |
 
 ---

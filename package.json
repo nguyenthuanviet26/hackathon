@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/ensure-adapter.mjs",
     "dev": "next dev --webpack",
+    "prebuild": "node scripts/ensure-adapter.mjs",
     "build": "next build --webpack",
+    "pretypecheck": "node scripts/ensure-adapter.mjs",
     "start": "next start",
     "init": "bash scripts/init-tidecloak.sh",
     "test": "node --test src/lib/**/*.test.ts",

@@ -24,6 +24,7 @@ import {
   type SigningBridge,
   type CryptoBridge,
 } from "./relationship";
+import { SIMULATED } from "@/lib/tide/mode";
 
 /** A fetch that carries the logged-in user's token (and its DPoP proof). */
 export type AuthedFetch = (input: string, init?: RequestInit) => Promise<Response>;
@@ -81,17 +82,9 @@ export async function signAndStoreLogPolicy(
     throw new Error("vendorId is missing from data/tidecloak.json — the realm is not licensed.");
   }
 
-  const adminPolicy = await fetchAdminPolicyBytes(authedFetch);
-
-  const signedB64 = await signRelationshipPolicy(
-    { vendorId, recordId: AI_LOG_RECORD_ID, ...GRANTS[kind] },
-    adminPolicy,
-    sdk
-  );
-
-  // Read back what was actually signed and send it with the bytes. The server checks this against
-  // what it expects before handing the policy to anyone (AP-RA08).
-  const descriptor = describeRelationshipPolicy(signedB64);
+  const { signedB64, descriptor } = SIMULATED
+    ? await signWithSimulatedOrk(kind, authedFetch, sdk)
+    : await signWithNetwork(kind, vendorId, authedFetch, sdk);
 
   const res = await authedFetch("/api/policy", {
     method: "POST",
@@ -103,6 +96,52 @@ export async function signAndStoreLogPolicy(
     const data = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(data.error ?? `Storing the ${kind} policy failed (HTTP ${res.status})`);
   }
+}
+
+type Signed = { signedB64: string; descriptor: ReturnType<typeof describeRelationshipPolicy> };
+
+async function signWithNetwork(
+  kind: PolicyKind,
+  vendorId: string,
+  authedFetch: AuthedFetch,
+  sdk: SigningBridge
+): Promise<Signed> {
+  const adminPolicy = await fetchAdminPolicyBytes(authedFetch);
+
+  const signedB64 = await signRelationshipPolicy(
+    { vendorId, recordId: AI_LOG_RECORD_ID, ...GRANTS[kind] },
+    adminPolicy,
+    sdk
+  );
+
+  // Read back what was actually signed and send it with the bytes. The server checks this against
+  // what it expects before handing the policy to anyone (AP-RA08).
+  return { signedB64, descriptor: describeRelationshipPolicy(signedB64) };
+}
+
+/** Plan C: the same grant, approved in the simulated enclave and signed by the simulated ORK. */
+async function signWithSimulatedOrk(kind: PolicyKind, authedFetch: AuthedFetch, sdk: SigningBridge): Promise<Signed> {
+  const { subject, access } = GRANTS[kind];
+  const params = {
+    subjectType: subject.type,
+    subjectId: subject.id,
+    assignmentId: AI_LOG_RECORD_ID,
+    roles: JSON.stringify(access === "write" ? ["_tide_encryptor"] : ["_tide_decryptor"]),
+  };
+
+  const [approval] = await sdk.approveTideRequests([
+    { id: `policy:${kind}`, request: new TextEncoder().encode(JSON.stringify(params)) },
+  ]);
+  if (!approval?.approved) throw new Error("the admin denied the grant in the enclave");
+
+  const res = await authedFetch("/api/sim/ork/sign-policy", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ params }),
+  });
+  const data = (await res.json().catch(() => ({}))) as Partial<Signed> & { policy?: string; error?: string };
+  if (!res.ok || !data.policy || !data.descriptor) throw new Error(data.error ?? `Signing failed (HTTP ${res.status})`);
+  return { signedB64: data.policy, descriptor: data.descriptor };
 }
 
 /** Encrypt a transcript for the log. The record id is the only tag the contract permits. */

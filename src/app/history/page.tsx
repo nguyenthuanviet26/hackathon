@@ -14,7 +14,7 @@
 // matter of the contract with them, not of this code.
 
 import { useCallback, useEffect, useState } from "react";
-import { useTideCloak } from "@tidecloak/nextjs";
+import { useTideCloak } from "@/lib/tide";
 import { decryptTranscript, explainCryptoError, fetchSignedPolicy, type PolicyState } from "@/lib/policy/aiLog";
 import { ROLE_DECRYPTOR, ROLE_LOG_READER } from "@/lib/log/record";
 import { Gate, Notice, Pill, Shell, btnSmall, c, card, mono, useWhoAmI } from "../ui";

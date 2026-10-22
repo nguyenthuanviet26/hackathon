@@ -16,3 +16,8 @@ data/keycloakdb*
 
 # TypeScript incremental build state
 *.tsbuildinfo
+
+# App data written at runtime: the encrypted AI log, signed policies, the simulation's state + keys
+data/ailog/
+data/policies/
+data/sim/

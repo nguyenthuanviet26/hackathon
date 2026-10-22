@@ -13,7 +13,7 @@
 // identity and the quorum could never be met (AP-89).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTideCloak } from "@tidecloak/nextjs";
+import { useTideCloak } from "@/lib/tide";
 import {
   IgaClient,
   approveWithEnclave,
