@@ -27,9 +27,8 @@ interface AskResult {
 }
 
 const EXAMPLE =
-  "Khách hàng Trần Thị Mai, SĐT 0912345678, email mai.tran@vidu.vn, CCCD 001234567890, " +
-  "thẻ 4111 1111 1111 1111, phàn nàn đơn hàng #88213 giao chậm 5 ngày. " +
-  "Viết giúp mình email xin lỗi và đề xuất bồi thường.";
+  "Khách hàng Nguyen Minh, SĐT 0901234567, email minh@example.com, CCCD 001234567890, " +
+  "phàn nàn đơn hàng #88213 giao chậm 2 ngày. Viết giúp mình email xin lỗi và đề xuất bồi thường.";
 
 export default function ConsolePage() {
   return (
@@ -47,6 +46,8 @@ function Console() {
 
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<AskResult | null>(null);
+  // The exact text that was sent, kept for restoring labels in the reply even if the box is edited.
+  const [sentPrompt, setSentPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logState, setLogState] = useState<string | null>(null);
@@ -95,6 +96,7 @@ function Console() {
 
       const ask = data as AskResult;
       setResult(ask);
+      setSentPrompt(prompt);
 
       // Encrypt the transcript in THIS browser and store ciphertext. The server never holds the
       // plaintext of what was asked or answered.
@@ -138,7 +140,7 @@ function Console() {
   }, [prompt, busy, secureFetch, writePolicy, doEncrypt, doDecrypt]);
 
   // Did the server redact the same way the preview said it would?
-  const mismatch = result !== null && result.sentToModel !== redact(prompt, result.rolesUsed).redacted;
+  const mismatch = result !== null && result.sentToModel !== redact(sentPrompt, result.rolesUsed).redacted;
 
   return (
     <>
@@ -225,9 +227,24 @@ function Console() {
 
           <div style={card}>
             <h2 style={{ marginTop: 0, fontSize: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              Trả lời <Pill>{result.mode === "mock" ? "mô phỏng" : result.model}</Pill>
+              AI trả lời <Pill>{result.mode === "mock" ? "mô phỏng" : result.model}</Pill>
             </h2>
-            <div style={mono}>{result.answer}</div>
+            <div style={codeBox}>
+              <RedactedText text={result.answer} />
+            </div>
+          </div>
+
+          <div style={{ ...card, borderColor: `${c.green}55` }}>
+            <h2 style={{ marginTop: 0, fontSize: "1rem", display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+              Trả lời đã điền lại <Pill tone="green">chỉ trong trình duyệt này</Pill>
+            </h2>
+            <p style={{ color: c.dim, fontSize: "0.86rem", marginTop: 0 }}>
+              Trình duyệt thay nhãn bằng giá trị thật bạn đã nhập. Bảng nhãn không bao giờ rời máy này:
+              máy chủ và AI chỉ thấy nhãn.
+            </p>
+            <div style={{ ...mono, lineHeight: 1.7 }}>
+              <RestoredText text={result.answer} mapping={restoreMap(sentPrompt, result.rolesUsed)} />
+            </div>
           </div>
 
           {logState && (
@@ -295,5 +312,35 @@ function FindingList({ findings }: { findings: Finding[] }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Label → real value, rebuilt in this browser by running the same engine over the text the
+ * employee typed, with the roles the server used — so the labels match the server's exactly.
+ */
+function restoreMap(original: string, roles: string[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const f of redact(original, roles).findings) {
+    if (f.placeholder) map.set(f.placeholder, original.slice(f.start, f.end));
+  }
+  return map;
+}
+
+function RestoredText({ text, mapping }: { text: string; mapping: Map<string, string> }) {
+  const parts = text.split(/(\[[A-ZĐ_]+_\d+\])/u);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const real = mapping.get(part);
+        return real ? (
+          <mark key={i} title={`thay cho ${part}`} style={{ background: c.greenBg, color: c.green, borderRadius: 4, padding: "0 0.2rem", fontWeight: 600 }}>
+            {real}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        );
+      })}
+    </>
   );
 }

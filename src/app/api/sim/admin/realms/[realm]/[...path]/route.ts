@@ -124,7 +124,7 @@ async function route(req: NextRequest, jwt: JWTPayload, path: string[]): Promise
     if (method === "POST" && d === "approve") {
       if (cr.status !== "PENDING") return err(409, `Change request is ${cr.status}, not PENDING`);
       if (cr.authorizers.some((x) => x.userId === me.userId)) {
-        return err(409, "This admin has already approved this request. Each admin counts once.");
+        return err(409, "Bạn đã ký yêu cầu này rồi. Mỗi quản trị viên chỉ được tính một lần.");
       }
 
       const { requestModel: signed } = ((await req.json().catch(() => ({}))) ?? {}) as { requestModel?: string };

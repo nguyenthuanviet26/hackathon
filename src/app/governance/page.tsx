@@ -78,6 +78,7 @@ function Governance() {
   );
 
   const [pending, setPending] = useState<ChangeRequest[] | null>(null);
+  const [applied, setApplied] = useState<ChangeRequest[]>([]);
   const [users, setUsers] = useState<UserRow[] | null>(null);
   const [igaOn, setIgaOn] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -90,8 +91,15 @@ function Governance() {
   const refresh = useCallback(async () => {
     if (!iga) return;
     try {
-      const [crs, people, status] = await Promise.all([iga.listPending(), iga.listUsers(), iga.igaStatus()]);
+      const [crs, people, status, done] = await Promise.all([
+        iga.listPending(),
+        iga.listUsers(),
+        iga.igaStatus(),
+        // Not every realm answers this filter; the panel works without it.
+        iga.listByStatus("APPROVED").catch(() => [] as ChangeRequest[]),
+      ]);
       setPending(crs);
+      setApplied(done.slice(-3).reverse());
       setIgaOn(status.enabled);
 
       const withRoles = await Promise.all(
@@ -338,6 +346,23 @@ function Governance() {
           </div>
         );
       })}
+
+      {applied.length > 0 && (
+        <>
+          <h2 style={{ fontSize: "1rem", margin: "1.5rem 0 0.75rem" }}>Vừa được áp dụng</h2>
+          {applied.map((cr) => (
+            <div key={cr.id} style={{ ...card, background: c.panelAlt, border: "none" }}>
+              <p style={{ margin: "0 0 0.7rem", fontSize: "0.95rem" }}>{describe(cr, users) ?? cr.actionType}</p>
+              <QuorumSeals
+                count={tally(cr).count}
+                threshold={tally(cr).threshold}
+                ready
+                names={(cr.authorizers ?? []).map((a) => a.username ?? "")}
+              />
+            </div>
+          ))}
+        </>
+      )}
 
       <p style={{ color: c.dim, fontSize: "0.84rem", marginTop: "1.5rem", lineHeight: 1.6 }}>
         Ngưỡng quorum do TideCloak quyết định, không do app:{" "}

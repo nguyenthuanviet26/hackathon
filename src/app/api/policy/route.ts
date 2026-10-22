@@ -84,7 +84,7 @@ export const GET = withAuth(async (req: NextRequest, jwt) => {
   if (kind === "read" && !hasRole(jwt, ROLE_LOG_READER) && !hasRole(jwt, ADMIN_ROLE)) {
     // Not "not found": say what is missing, so a reader waiting on a quorum knows where they stand.
     return Response.json(
-      { error: `Reading the AI history needs the ${ROLE_LOG_READER} role.` },
+      { error: `Cần role ${ROLE_LOG_READER} mới mở được lịch sử. Role này chỉ được cấp khi đủ quản trị viên ký duyệt.` },
       { status: 403 }
     );
   }

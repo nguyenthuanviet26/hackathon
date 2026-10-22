@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, mkdirSync, renameSync } from "fs";
 import { join } from "path";
 import { withAuth } from "@/lib/auth/middleware";
 import { hasRole } from "@/lib/auth/tideJWT";
-import { ROLE_LOG_READER, AI_LOG_RECORD_ID } from "@/lib/log/record";
+import { ADMIN_ROLE, ROLE_LOG_READER, AI_LOG_RECORD_ID } from "@/lib/log/record";
 import type { RuleId } from "@/lib/redact";
 
 // The AI history. This server stores CIPHERTEXT and metadata, never a transcript.
@@ -69,17 +69,18 @@ function isStringArray(v: unknown): v is string[] {
 
 // GET /api/log — list entries.
 //
-// A log reader sees the whole company's log (that is the job). Everyone else sees only their own,
-// because the metadata alone says who consulted the AI and when.
+// A log reader and a realm admin see the whole company's log: the reader to open it, the admin to
+// audit who used the AI and when — as ciphertext, which an admin cannot open without the reader
+// role. Everyone else sees only their own, because the metadata alone says who consulted the AI.
 export const GET = withAuth(async (_req, jwt) => {
   const all = readAll();
-  const reader = hasRole(jwt, ROLE_LOG_READER);
-  const entries = reader ? all : all.filter((e) => e.userId === jwt.sub);
+  const wide = hasRole(jwt, ROLE_LOG_READER) || hasRole(jwt, ADMIN_ROLE);
+  const entries = wide ? all : all.filter((e) => e.userId === jwt.sub);
 
   return Response.json({
     entries: entries.slice().reverse(),
     /** Whether the CALLER is allowed the full log. The UI reflects this; the filter above enforces it. */
-    scope: reader ? "all" : "own",
+    scope: wide ? "all" : "own",
     recordId: AI_LOG_RECORD_ID,
     total: entries.length,
   });

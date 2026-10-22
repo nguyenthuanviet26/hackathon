@@ -119,6 +119,14 @@ export class IgaClient {
     return Array.isArray(data) ? (data as ChangeRequest[]) : [];
   }
 
+  /** Requests in another state, e.g. APPROVED, to show what the quorum has just applied. */
+  async listByStatus(status: ChangeRequest["status"]): Promise<ChangeRequest[]> {
+    const res = await this.call(`/iga/change-requests?status=${status}`);
+    if (!res.ok) return IgaClient.fail(res, "Đọc danh sách yêu cầu");
+    const data = await res.json();
+    return Array.isArray(data) ? (data as ChangeRequest[]) : [];
+  }
+
   async get(id: string): Promise<ChangeRequest> {
     const res = await this.call(`/iga/change-requests/${id}`);
     if (!res.ok) return IgaClient.fail(res, "Đọc yêu cầu");

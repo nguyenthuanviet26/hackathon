@@ -237,7 +237,7 @@ function authorise(policy: SimPolicy, jwtRoles: string[], tags: unknown, capabil
     throw new Error(`Tags do not contain assignmentId ${assignmentId}: items must be tagged with exactly the record id`);
   }
   if (!jwtRoles.includes(subjectId)) {
-    throw new Error(`Role ${subjectId} not found in doken`);
+    throw new Error(`role not found in doken: ${subjectId}`);
   }
   if (!(JSON.parse(roles) as string[]).includes(capability)) {
     throw new Error(`${capability} not found in list of roles the policy grants`);

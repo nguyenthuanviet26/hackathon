@@ -92,3 +92,18 @@ test("ruleStateFor marks which rules a role relaxes and which are absolute", () 
     assert.equal(state.find((r) => r.id === "nationalId")!.absolute, true);
   }
 });
+
+test("a known customer name is redacted and no role relaxes it", () => {
+  for (const roles of [EMPLOYEE, LOOSENED]) {
+    const r = redact("Khách hàng Trần Thị Mai, SĐT 0912345678", roles);
+    assert.match(r.redacted, /^Khách hàng \[KHACH_HANG_1\], SĐT /);
+    assert.equal(r.findings[0].ruleId, "customer");
+    assert.equal(r.findings[0].passedThrough, false);
+  }
+});
+
+test("a name is only redacted as a whole word, and unknown names are left alone", () => {
+  assert.equal(redact("Nguyen Minhthu gọi tới", EMPLOYEE).redacted, "Nguyen Minhthu gọi tới");
+  assert.equal(redact("Anh Hoàng Long gọi tới", EMPLOYEE).redacted, "Anh Hoàng Long gọi tới");
+  assert.equal(redact("nguyen minh gọi tới", EMPLOYEE).redacted, "[KHACH_HANG_1] gọi tới");
+});

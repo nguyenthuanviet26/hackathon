@@ -8,7 +8,7 @@ _WorkSafe AI is an internal AI gateway that redacts customer data before it reac
 
 Built with [TideCloak](https://tide.org/tidecloak?utm_source=github&utm_medium=readme&utm_campaign=unlocked).
 
-**Demo video:** _(link here)_
+**Demo video:** [docs/WorkSafeAI_demo.mp4](docs/WorkSafeAI_demo.mp4) (2 min, real prototype footage in simulated mode)
 
 ### 1. Vision & originality
 

@@ -46,7 +46,7 @@ một mình.
 | # | Làm gì | Khán giả thấy gì |
 |---|---|---|
 | 1 | Profile `nhanvien` → `/history` | Các bản ghi, nội dung là chuỗi mã. Metadata rõ: ai, khi nào, quy tắc nào đã bắn |
-| 2 | Profile `admin` → `/history` | Banner vàng: không có `ai_log_reader` nên **chỉ thấy bản mã của chính mình**, dù là `tide-realm-admin` |
+| 2 | Profile `admin` → `/history` | Thấy bản ghi của cả công ty (ai, khi nào) nhưng **chỉ là bản mã**: không có `ai_log_reader` thì không mở được, dù là `tide-realm-admin` |
 | 3 | Bấm **Giải mã** trên một bản ghi | Bị từ chối, kèm lý do thật từ contract — không phải "service unavailable" |
 | 4 | `/governance` → chọn `admin`, đề xuất **cả hai**: `ai_log_reader` và `_tide_decryptor` | Hai yêu cầu đang chờ |
 | 5 | `admin` ký, rồi `admin2` ký (hai yêu cầu, nên bốn lần ký) | Lần lượt đủ quorum và được áp dụng |

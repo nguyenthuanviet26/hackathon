@@ -13,8 +13,10 @@
 // IGA realm, granting that role is a change request, so loosening a rule costs a quorum of admins
 // and no single one of them can do it. See docs/THREAT-MODEL.md.
 
+import { customerNamePattern } from "./customers.ts";
+
 /** Which rule found something. Stable ids — they are stored with the log and shown in the UI. */
-export type RuleId = "card" | "nationalId" | "phone" | "email";
+export type RuleId = "card" | "nationalId" | "phone" | "email" | "customer";
 
 export interface RedactionRule {
   id: RuleId;
@@ -70,6 +72,15 @@ export const RULES: readonly RedactionRule[] = [
     unlockRole: "ai_export_contact",
     placeholder: (n) => `[EMAIL_${n}]`,
     pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
+  },
+  {
+    id: "customer",
+    label: "Customer name",
+    labelVi: "Tên khách hàng",
+    unlockRole: null, // the model never needs to know who the customer is
+    placeholder: (n) => `[KHACH_HANG_${n}]`,
+    // Only names in the customer directory: a name has no shape a pattern can find safely.
+    pattern: customerNamePattern(),
   },
 ] as const;
 

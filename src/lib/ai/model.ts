@@ -28,27 +28,28 @@ const MOCK_MODEL = "worksafe-mock-1";
  * in a demo: the model can only talk about `[SĐT_1]`, never about the customer's real number.
  */
 function mockAnswer(prompt: string): string {
-  const placeholders = [...prompt.matchAll(/\[(?:SĐT|EMAIL|CCCD|THE_CARD)_\d+\]/g)].map((m) => m[0]);
+  const placeholders = [...prompt.matchAll(/\[(?:SĐT|EMAIL|CCCD|THE_CARD|KHACH_HANG)_\d+\]/g)].map((m) => m[0]);
   const unique = [...new Set(placeholders)];
+  const first = (kind: string) => unique.find((p) => p.startsWith(`[${kind}_`));
 
-  const lines = [
-    "(mô hình mô phỏng — chưa gọi nhà cung cấp AI nào)",
+  // A draft reply written only in terms of the labels, the way a real model has to.
+  const name = first("KHACH_HANG");
+  const contact = [first("SĐT"), first("EMAIL")].filter(Boolean).join(" hoặc ");
+  const draft = [
+    `Kính gửi ${name ?? "Quý khách"},`,
     "",
-    "Tôi đã nhận được yêu cầu và sẽ trả lời dựa trên nội dung sau khi che:",
+    "Chúng tôi thành thật xin lỗi vì đơn hàng của Quý khách được giao chậm hơn cam kết.",
+    contact
+      ? `Bộ phận chăm sóc khách hàng sẽ liên hệ Quý khách qua ${contact} trong hôm nay để xác nhận thời gian giao và phương án bồi thường.`
+      : "Bộ phận chăm sóc khách hàng sẽ liên hệ Quý khách trong hôm nay để xác nhận thời gian giao và phương án bồi thường.",
     "",
-    prompt.length > 600 ? prompt.slice(0, 600) + "…" : prompt,
+    "Trân trọng,",
   ];
 
+  const lines = ["(mô hình mô phỏng: chưa gọi nhà cung cấp AI nào)", "", ...draft];
   if (unique.length > 0) {
-    lines.push(
-      "",
-      `Tôi thấy ${unique.length} giá trị đã bị che (${unique.join(", ")}). ` +
-        "Tôi không biết giá trị thật của chúng, nên sẽ nói về chúng bằng đúng các nhãn này."
-    );
-  } else {
-    lines.push("", "Yêu cầu này không chứa dữ liệu khách hàng nào cần che.");
+    lines.push("", `Mô hình chỉ thấy các nhãn ${unique.join(", ")}, không thấy giá trị thật.`);
   }
-
   return lines.join("\n");
 }
 
@@ -67,7 +68,7 @@ async function anthropicAnswer(prompt: string): Promise<ModelReply> {
       max_tokens: 1024,
       system:
         "Bạn là trợ lý nội bộ của một công ty. Dữ liệu khách hàng trong câu hỏi đã được che và " +
-        "thay bằng các nhãn như [SĐT_1], [EMAIL_1], [CCCD_1]. Hãy trả lời bằng chính các nhãn đó; " +
+        "thay bằng các nhãn như [KHACH_HANG_1], [SĐT_1], [EMAIL_1], [CCCD_1]. Hãy trả lời bằng chính các nhãn đó; " +
         "không suy đoán, không bịa ra giá trị thật đằng sau một nhãn.",
       messages: [{ role: "user", content: prompt }],
     }),

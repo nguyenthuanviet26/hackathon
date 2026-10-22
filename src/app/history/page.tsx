@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTideCloak } from "@/lib/tide";
 import { decryptTranscript, explainCryptoError, fetchSignedPolicy, type PolicyState } from "@/lib/policy/aiLog";
 import { ROLE_DECRYPTOR, ROLE_LOG_READER } from "@/lib/log/record";
-import { Gate, Notice, Pill, Shell, btnGhost, btnSmall, c, card, codeBox, mono, useWhoAmI } from "../ui";
+import { Gate, Notice, Pill, RedactedText, Shell, btnGhost, btnSmall, c, card, codeBox, mono, useWhoAmI } from "../ui";
 
 interface LogEntry {
   id: string;
@@ -119,9 +119,18 @@ function History() {
 
       {!me.isLogReader && (
         <Notice tone="amber">
-          Tài khoản này không có role <code>{ROLE_LOG_READER}</code>, nên chỉ thấy bản mã của chính
-          mình và không mở được gì. Kể cả <code>tide-realm-admin</code> cũng vậy: role đó phải được
-          đủ số quản trị viên phê duyệt mới cấp được.
+          {me.isAdmin ? (
+            <>
+              Quản trị viên thấy ai đã dùng AI và khi nào, nhưng nội dung chỉ là bản mã. Không có role{" "}
+              <code>{ROLE_LOG_READER}</code> thì không mở được, kể cả <code>tide-realm-admin</code>: role
+              đó phải được đủ số quản trị viên phê duyệt mới cấp được.
+            </>
+          ) : (
+            <>
+              Tài khoản này không có role <code>{ROLE_LOG_READER}</code>, nên chỉ thấy bản mã của chính
+              mình và không mở được gì.
+            </>
+          )}
         </Notice>
       )}
 
@@ -161,17 +170,7 @@ function History() {
           </div>
 
           {opened[entry.id] ? (
-            <div
-              style={{
-                ...mono,
-                background: c.greenBg,
-                border: `1px solid ${c.green}44`,
-                borderRadius: 7,
-                padding: "0.9rem",
-              }}
-            >
-              {opened[entry.id]}
-            </div>
+            <Transcript text={opened[entry.id]} />
           ) : (
             <div style={{ ...codeBox, color: c.dim }}>
               {entry.ciphertext.slice(0, 120)}
@@ -181,7 +180,7 @@ function History() {
 
           {failed[entry.id] && (
             <p style={{ color: c.red, fontSize: "0.86rem", marginBottom: 0 }}>
-              Mạng Tide từ chối: {failed[entry.id]}
+              Bị từ chối: {failed[entry.id]}
             </p>
           )}
 
@@ -212,5 +211,33 @@ function History() {
         </div>
       ))}
     </>
+  );
+}
+
+/** A decrypted transcript: what the employee typed beside what the AI received. */
+function Transcript({ text }: { text: string }) {
+  let t: { prompt?: string; sentToModel?: string; answer?: string } | null = null;
+  try {
+    t = JSON.parse(text);
+  } catch {
+    /* not a transcript this app wrote: show it as is */
+  }
+  if (!t?.prompt) return <div style={{ ...codeBox, background: c.greenBg }}>{text}</div>;
+
+  const col: React.CSSProperties = { flex: "1 1 280px", minWidth: 0 };
+  const label: React.CSSProperties = { fontSize: "0.82rem", fontWeight: 600, marginBottom: "0.35rem" };
+  return (
+    <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+      <div style={col}>
+        <div style={{ ...label, color: c.green }}>Bản gốc nhân viên nhập (vừa giải mã)</div>
+        <div style={{ ...codeBox, background: c.greenBg, borderColor: `${c.green}44` }}>{t.prompt}</div>
+      </div>
+      <div style={col}>
+        <div style={{ ...label, color: c.blue }}>Nội dung đã gửi cho AI</div>
+        <div style={codeBox}>
+          <RedactedText text={t.sentToModel ?? ""} />
+        </div>
+      </div>
+    </div>
   );
 }
